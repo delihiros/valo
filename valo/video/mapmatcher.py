@@ -1,8 +1,7 @@
 import cv2
 import numpy as np
-from matplotlib import pyplot as plt
-import sys
 from quantize import quantize
+from range_filter import make_mask
 
 MIN_MATCH_COUNT = 2
 
@@ -81,11 +80,16 @@ def crop_and_fix_map(template, img):
     # quantized_cropped_img_gray = cv2.cvtColor(quantized_cropped_img_color, cv2.COLOR_BGR2GRAY)
     # cv2.imwrite("./cropped-gray.png", quantized_cropped_img_gray)
 
-    cropped_img_gray = cv2.cvtColor(cropped_img_color, cv2.COLOR_BGR2GRAY)
+    # TODO: map name
+    mask = make_mask(cropped_img_color, 'Ascent')
+    masked_cropped_img_color = cv2.bitwise_and(cropped_img_color, cropped_img_color, mask=mask)
+
+
+    masked_cropped_img_gray = cv2.cvtColor(masked_cropped_img_color, cv2.COLOR_BGR2GRAY)
 
     # equalize histograms
     template_img_eq = cv2.equalizeHist(template_img_gray)
-    img_eq = cv2.equalizeHist(cropped_img_gray)
+    img_eq = cv2.equalizeHist(masked_cropped_img_gray)
 
     _, M = get_matching(template_img_eq, img_eq)
 
@@ -101,7 +105,7 @@ if __name__ == '__main__':
     ap.add_argument('-i', '--image_dir', required=True, help='path to input image directory')
     ap.add_argument('-o', '--output_dir', required=True, help='path to output directory')
     args = vars(ap.parse_args())
-    image = cv2.imread(args['image'])
+
     template = args['template'] 
     img_dir = args['image_dir']
     out_dir = args['output_dir']
